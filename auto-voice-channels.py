@@ -676,7 +676,7 @@ class MyClient(discord.AutoShardedClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ready_already = False
-        self.start_time = None
+        self.start_time = datetime.now()
         self.shard_id_ = itertools.count(0, 1)
 
     def up_time(self):
@@ -686,13 +686,7 @@ class MyClient(discord.AutoShardedClient):
         minutes, seconds = divmod(remainder, 60)
         return days, hours, minutes, seconds
 
-    async def on_ready_once(self):
-        self.ready_already = True  # we only want this firing once on initial start
-        self.start_time = datetime.now()   # The bot is only really started when its fully connected.
-
     async def on_shard_ready(self, shard_id):
-        if (shard_id == (self.shard_count - 1)) and not self.ready_already:
-            await self.on_ready_once()  # This can be used for connecting to databases, starting times etc...
 
         print('=' * 24)
         curtime = datetime.now(pytz.timezone(cfg.CONFIG['log_timezone'])).strftime("%Y-%m-%d %H:%M")
