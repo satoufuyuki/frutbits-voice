@@ -7,6 +7,7 @@ import subprocess
 import sys
 from datetime import datetime
 from time import time
+import itertools
 
 import cfg
 from commands import admin_commands
@@ -20,13 +21,20 @@ import functions as func
 from functions import log, echo
 from discord.ext.tasks import loop
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 ADMIN_CHANNEL = None
 ADMIN = None
-
+PRODUCTION_BUILD = True    # IMPORTANT! ---> SET THIS TO FALSE IF NOT CLUSTERING
 DEV_BOT = cfg.CONFIG['DEV'] if 'DEV' in cfg.CONFIG else False
 GOLD_BOT = False
-NUM_SHARDS = cfg.CONFIG['num_shards'] if 'num_shards' in cfg.CONFIG else 0
+
+if PRODUCTION_BUILD:    # Only used in clustering
+    starting_args = sys.argv
+    CLUSTER_ID, SHARDS, TOTAL_SHARDS = starting_args[1:]
+    CLUSTER_ID, SHARDS, NUM_SHARDS = int(CLUSTER_ID), int(SHARDS), int(TOTAL_SHARDS)
+else:
+    NUM_SHARDS = cfg.CONFIG['num_shards'] if 'num_shards' in cfg.CONFIG else 0
+
 if DEV_BOT:
     print("DEV BOT")
     TOKEN = cfg.CONFIG['token_dev']
@@ -44,7 +52,7 @@ try:
         NUM_SHARDS = 1
     else:
         print("NO SAPPHIRE WITH ID " + str(sid))
-        sys.exit()
+        # sys.exit() todo add compat with shell exe
 except IndexError:
     pass
 except ValueError:
@@ -124,8 +132,6 @@ class LoopChecks:
 
 
 def cleanup(client, tick_):
-    # TODO probably possible to run into race conditions
-
     start_time = time()
 
     LoopSystem = LoopChecks(client=client, tick=tick_)
@@ -161,36 +167,68 @@ def cleanup(client, tick_):
     cfg.TIMINGS[fn_name] = end_time - start_time
 
 
-@loop(seconds=cfg.CONFIG['loop_interval'])
-async def main_loop(client):
-    start_time = time()
-    if client.is_ready():
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            thread_ = executor.submit(func.get_guilds, client)
-        while not thread_.done():
-            await asyncio.sleep(0.1)
-        guilds = thread_.result()
-        for guild in guilds:
-            settings = utils.get_serv_settings(guild)
-            if settings['enabled'] and settings['auto_channels']:
-                await check_all_channels(guild, settings)
-        end_time = time()
-        fn_name = "main_loop"
-        cfg.TIMINGS[fn_name] = end_time - start_time
-        if cfg.TIMINGS[fn_name] > 20:
-            await func.log_timings(client, fn_name)
+class MainLoop:
+    def __init__(self):
+        self.change_interval = cfg.CONFIG['loop_interval']
 
-        # Check for new patrons using patron role in support server
-        if cfg.SAPPHIRE_ID is None:
-            try:
-                num_patrons = len(client.get_guild(601015720200896512).get_role(606482184043364373).members)
-            except AttributeError:
-                pass
+    async def main_loop(self):
+        """
+        Main loop, this gets called from main_loop_manager
+        """
+        while True:
+            start_time = time()
+            if client.is_ready():
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    thread_ = executor.submit(func.get_guilds, client)
+                while not thread_.done():
+                    await asyncio.sleep(0.1)
+                guilds = thread_.result()
+                for guild in guilds:
+                    settings = utils.get_serv_settings(guild)
+                    if settings['enabled'] and settings['auto_channels']:
+                        await check_all_channels(guild, settings)
+                end_time = time()
+                fn_name = "main_loop"
+                cfg.TIMINGS[fn_name] = end_time - start_time
+                if cfg.TIMINGS[fn_name] > 20:
+                    await func.log_timings(client, fn_name)
+
+                # Check for new patrons using patron role in support server
+                if cfg.SAPPHIRE_ID is None:
+                    try:
+                        num_patrons = len(client.get_guild(601015720200896512).get_role(606482184043364373).members)
+                    except AttributeError:
+                        pass
+                    else:
+                        if cfg.NUM_PATRONS != num_patrons:
+                            if cfg.NUM_PATRONS != -1:  # Skip first run, since patrons are fetched on startup already.
+                                await func.check_patreon(force_update=TOKEN != cfg.CONFIG['token_dev'], client=client)
+                            cfg.NUM_PATRONS = num_patrons
+            await asyncio.sleep(self.change_interval)
+
+    async def main_loop_manager(self):
+        """
+        This function calls the main loop and checks if the
+        loop has finished / crashed. If its crashed restart loop.
+        """
+        while not client.is_ready():
+            await asyncio.sleep(2)
+        print("Starting Main loop")
+        task = asyncio.get_event_loop().create_task(self.main_loop())  # starts task
+        while True:
+            if task.done():  # Checking if task finished (crashed)
+                await func.admin_log("**ALERT:** Main loop has crashed.\n"
+                                     "**Exception:**\n"
+                                     "```\n"
+                                     f"{task.exception()}"
+                                     f"```"
+                                     "Attempting to restart...\n", client=client)
+                task = asyncio.get_event_loop().create_task(self.main_loop())  # try start it again
             else:
-                if cfg.NUM_PATRONS != num_patrons:
-                    if cfg.NUM_PATRONS != -1:  # Skip first run, since patrons are fetched on startup already.
-                        await func.check_patreon(force_update=TOKEN != cfg.CONFIG['token_dev'], client=client)
-                    cfg.NUM_PATRONS = num_patrons
+                await asyncio.sleep(60)  # suspend task for 1 minute to save resources
+
+    def start(self):
+        asyncio.get_event_loop().create_task(self.main_loop_manager())
 
 
 @loop(seconds=cfg.CONFIG['loop_interval'])
@@ -473,7 +511,7 @@ async def dynamic_tickrate(client):
         new_seed_interval = max(1.5, min(15, new_seed_interval))
         if cfg.SAPPHIRE_ID is None:
             print("New tickrate is {0:.1f}s, seed interval is {1:.2f}m".format(new_tickrate, new_seed_interval))
-        main_loop.change_interval(seconds=new_tickrate)
+        main_loop.change_interval = new_tickrate
         creation_loop.change_interval(seconds=new_tickrate)
         deletion_loop.change_interval(seconds=new_tickrate * 2)
         update_seed.change_interval(minutes=new_seed_interval)
@@ -637,8 +675,26 @@ class MyClient(discord.AutoShardedClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ready_already = False
+        self.start_time = None
+        self.shard_id_ = itertools.count(0, 1)
+
+    def up_time(self):
+        time_delta = datetime.now() - self.start_time   # Gives us a time delta object
+        days = time_delta.days
+        hours, remainder = divmod(time_delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return days, hours, minutes, seconds
+
+    async def on_ready_once(self):
+        self.ready_already = True  # we only want this firing once on initial start
+        self.start_time = datetime.now()   # The bot is only really started when its fully connected.
 
     async def on_ready(self):
+        print("Shard connected")
+        if (next(self.shard_id_) == (self.shard_count - 1)) and not self.ready_already:
+            await self.on_ready_once()  # This can be used for connecting to databases, starting times etc...
+
         print('=' * 24)
         curtime = datetime.now(pytz.timezone(cfg.CONFIG['log_timezone'])).strftime("%Y-%m-%d %H:%M")
         print(curtime)
@@ -659,18 +715,28 @@ class MyClient(discord.AutoShardedClient):
             settings = utils.get_serv_settings(g)
             if 'prefix' in settings:
                 cfg.PREFIXES[g.id] = settings['prefix']
-        print("Shards:", len(shards))
+        print("Shards:", len(self.shards))
         for s in shards:
             print("s{}: {} guilds".format(s, shards[s]))
         print('=' * 24)
 
         await func.admin_log("🟥🟧🟨🟩   **Ready**   🟩🟨🟧🟥", self)
 
+    async def on_shard_ready(self, shard_id):
+        if (shard_id == (self.shard_count - 1)) and not self.ready_already:
+            await self.on_ready_once()  # This can be used for connecting to databases, starting times etc...
 
-if NUM_SHARDS > 1:
-    client = MyClient(shard_count=NUM_SHARDS)
+
+if PRODUCTION_BUILD:
+    def shard_ids_from_cluster(cluster, per):
+        return list(range(per * cluster, per * cluster + per))
+    client = MyClient(shard_count=NUM_SHARDS, shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS))
+
 else:
-    client = MyClient()
+    if NUM_SHARDS > 1:
+        client = MyClient(shard_count=NUM_SHARDS)
+    else:
+        client = MyClient()
 
 
 async def reload_modules(m):
@@ -1098,18 +1164,19 @@ async def on_guild_remove(guild):
             num_members),
         client)
 
-
-cleanup(client=client, tick_=1)
-main_loop.start(client)
-creation_loop.start(client)
-deletion_loop.start(client)
-check_dead.start(client)
-check_votekicks.start(client)
-create_join_channels.start(client)
-dynamic_tickrate.start(client)
-lingering_secondaries.start(client)
-update_seed.start(client)
-analytics.start(client)
-update_status.start(client)
-check_patreon.start()
-client.run(TOKEN)
+if __name__ == "__main__":
+    cleanup(client=client, tick_=1)
+    main_loop = MainLoop()
+    main_loop.start()
+    creation_loop.start(client)
+    deletion_loop.start(client)
+    check_dead.start(client)
+    check_votekicks.start(client)
+    create_join_channels.start(client)
+    dynamic_tickrate.start(client)
+    lingering_secondaries.start(client)
+    update_seed.start(client)
+    analytics.start(client)
+    update_status.start(client)
+    check_patreon.start()
+    client.run(TOKEN)
