@@ -690,9 +690,8 @@ class MyClient(discord.AutoShardedClient):
         self.ready_already = True  # we only want this firing once on initial start
         self.start_time = datetime.now()   # The bot is only really started when its fully connected.
 
-    async def on_ready(self):
-        print("Shard connected")
-        if (next(self.shard_id_) == (self.shard_count - 1)) and not self.ready_already:
+    async def on_shard_ready(self, shard_id):
+        if (shard_id == (self.shard_count - 1)) and not self.ready_already:
             await self.on_ready_once()  # This can be used for connecting to databases, starting times etc...
 
         print('=' * 24)
@@ -721,10 +720,6 @@ class MyClient(discord.AutoShardedClient):
         print('=' * 24)
 
         await func.admin_log("🟥🟧🟨🟩   **Ready**   🟩🟨🟧🟥", self)
-
-    async def on_shard_ready(self, shard_id):
-        if (shard_id == (self.shard_count - 1)) and not self.ready_already:
-            await self.on_ready_once()  # This can be used for connecting to databases, starting times etc...
 
 
 if PRODUCTION_BUILD:
