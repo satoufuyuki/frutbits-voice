@@ -24,7 +24,7 @@ from discord.ext.tasks import loop
 logging.basicConfig(level=logging.INFO)
 ADMIN_CHANNEL = None
 ADMIN = None
-PRODUCTION_BUILD = True    # IMPORTANT! ---> SET THIS TO FALSE IF NOT CLUSTERING
+PRODUCTION_BUILD = False    # IMPORTANT! ---> SET THIS TO FALSE IF NOT CLUSTERING
 DEV_BOT = cfg.CONFIG['DEV'] if 'DEV' in cfg.CONFIG else False
 GOLD_BOT = False
 
