@@ -21,7 +21,7 @@ import functions as func
 from functions import log, echo
 from discord.ext.tasks import loop
 
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 ADMIN_CHANNEL = None
 ADMIN = None
 PRODUCTION_BUILD = True    # IMPORTANT! ---> SET THIS TO FALSE IF NOT CLUSTERING
