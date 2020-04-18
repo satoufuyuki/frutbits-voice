@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 
 
-TOTAL_CLUSTERS = 2
+TOTAL_CLUSTERS = 1
 SHARDS_PER_CLUSTER = 2
 TOTAL_SHARDS = TOTAL_CLUSTERS * SHARDS_PER_CLUSTER
 CURRENT_DIR = os.getcwd()
