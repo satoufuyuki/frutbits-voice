@@ -719,11 +719,11 @@ class MyClient(discord.AutoShardedClient):
 if PRODUCTION_BUILD:
     def shard_ids_from_cluster(cluster, per):
         return list(range(per * cluster, per * cluster + per))
-    client = MyClient(shard_count=NUM_SHARDS, shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS))
+    client = MyClient(shard_count=NUM_SHARDS, shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS), heartbeat_timeout=120)
 
 else:
     if NUM_SHARDS > 1:
-        client = MyClient(shard_count=NUM_SHARDS)
+        client = MyClient(shard_count=NUM_SHARDS, heartbeat_timeout=120)
     else:
         client = MyClient()
 
