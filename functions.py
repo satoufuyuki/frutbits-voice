@@ -737,7 +737,11 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
 
         if '@@game_name@@' in cname or '@@party_' in cname or '@@num_playing@@' in cname or has_expression:
             games = get_channel_games(channel)
-            gname = get_game_name(channel, games)
+            gname = get_game_name(channel, games)            
+        
+        if '@@num@@' in cname:
+            members = [m for m in channel.members if not m.bot]
+            cname = cname.replace('@@num@@', str(len(members)))
 
         if '@@party_' in cname or '@@num_playing@@' in cname or has_expression:
             party = get_party_info(channel, gname, settings['asip'] if 'asip' in settings else False)
@@ -807,10 +811,6 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
             else:
                 nato = nato[i % len(nato)] + " " + str(ceil((i + 1) / len(nato)))
             cname = cname.replace('@@nato@@', nato)
-
-        if '@@num@@' in cname:
-            members = [m for m in channel.members if not m.bot]
-            cname = cname.replace('@@num@@', str(len(members)))
 
         if '@@num_playing@@' in cname and guild_is_sapphire:
             cname = cname.replace('@@num_playing@@', party['num_playing'])

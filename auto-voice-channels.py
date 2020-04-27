@@ -21,7 +21,7 @@ import functions as func
 from functions import log, echo
 from discord.ext.tasks import loop
 
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 ADMIN_CHANNEL = None
 ADMIN = None
 PRODUCTION_BUILD = True    # IMPORTANT! ---> SET THIS TO FALSE IF NOT CLUSTERING
@@ -747,11 +747,11 @@ class MyClient(discord.AutoShardedClient):
 if PRODUCTION_BUILD:
     def shard_ids_from_cluster(cluster, per):
         return list(range(per * cluster, per * cluster + per))
-    client = MyClient(shard_count=NUM_SHARDS, shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS))
+    client = MyClient(shard_count=NUM_SHARDS, shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS), heartbeat_timeout=120)
 
 else:
     if NUM_SHARDS > 1:
-        client = MyClient(shard_count=NUM_SHARDS)
+        client = MyClient(shard_count=NUM_SHARDS, heartbeat_timeout=120)
     else:
         client = MyClient()
 
