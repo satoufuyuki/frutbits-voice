@@ -178,15 +178,30 @@ class MainLoop:
         while True:
             start_time = time()
             if client.is_ready():
+
+                # Gets guild in new thread
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     thread_ = executor.submit(func.get_guilds, client)
                 while not thread_.done():
                     await asyncio.sleep(0.1)
+
+                # Lets get those guild results and generate the tasks
                 guilds = thread_.result()
-                for guild in guilds:
+                tasks = []
+                temp = []
+                for i, guild in enumerate(guilds):
                     settings = utils.get_serv_settings(guild)
                     if settings['enabled'] and settings['auto_channels']:
-                        await check_all_channels(guild, settings)
+                        temp.append(check_all_channels(guild, settings))
+                        if not i % 100:
+                            tasks.append(temp)
+                            temp = []
+                tasks.append(temp)
+
+                # lets do this all at once cuz what could go wrong
+                for task_cluster in tasks:
+                    await asyncio.gather(*task_cluster)
+
                 end_time = time()
                 fn_name = "main_loop"
                 cfg.TIMINGS[fn_name] = end_time - start_time
@@ -213,7 +228,21 @@ class MainLoop:
         """
         while not client.is_ready():
             await asyncio.sleep(2)
-        print("Starting Main loop")
+        print("Starting loops")
+
+        main_loop.start()
+        creation_loop.start(client)
+        deletion_loop.start(client)
+        check_dead.start(client)
+        check_votekicks.start(client)
+        create_join_channels.start(client)
+        dynamic_tickrate.start(client)
+        lingering_secondaries.start(client)
+        update_seed.start(client)
+        analytics.start(client)
+        update_status.start(client)
+        check_patreon.start()
+
         task = asyncio.get_event_loop().create_task(self.main_loop())  # starts task
         while True:
             if task.done():  # Checking if task finished (crashed)
@@ -687,7 +716,6 @@ class MyClient(discord.AutoShardedClient):
         return days, hours, minutes, seconds
 
     async def on_shard_ready(self, shard_id):
-
         print('=' * 24)
         curtime = datetime.now(pytz.timezone(cfg.CONFIG['log_timezone'])).strftime("%Y-%m-%d %H:%M")
         print(curtime)
@@ -1156,16 +1184,4 @@ async def on_guild_remove(guild):
 if __name__ == "__main__":
     cleanup(client=client, tick_=1)
     main_loop = MainLoop()
-    main_loop.start()
-    creation_loop.start(client)
-    deletion_loop.start(client)
-    check_dead.start(client)
-    check_votekicks.start(client)
-    create_join_channels.start(client)
-    dynamic_tickrate.start(client)
-    lingering_secondaries.start(client)
-    update_seed.start(client)
-    analytics.start(client)
-    update_status.start(client)
-    check_patreon.start()
     client.run(TOKEN)
