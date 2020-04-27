@@ -231,11 +231,18 @@ class MainLoop:
         print("Starting loops")
 
         main_loop.start()
+
+        await asyncio.sleep(20)
         creation_loop.start(client)
+        await asyncio.sleep(20)
         deletion_loop.start(client)
+        await asyncio.sleep(20)
         check_dead.start(client)
+        await asyncio.sleep(20)
         check_votekicks.start(client)
+        await asyncio.sleep(20)
         create_join_channels.start(client)
+        await asyncio.sleep(20)
         dynamic_tickrate.start(client)
         lingering_secondaries.start(client)
         update_seed.start(client)
