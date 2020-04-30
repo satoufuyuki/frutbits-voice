@@ -29,8 +29,7 @@ DEV_BOT = cfg.CONFIG['DEV'] if 'DEV' in cfg.CONFIG else False
 GOLD_BOT = False
 
 if PRODUCTION_BUILD:    # Only used in clustering
-    starting_args = sys.argv
-    CLUSTER_ID, SHARDS, TOTAL_SHARDS = starting_args[1:]
+    CLUSTER_ID, SHARDS, TOTAL_SHARDS = 0, 2, 2
     CLUSTER_ID, SHARDS, NUM_SHARDS = int(CLUSTER_ID), int(SHARDS), int(TOTAL_SHARDS)
 else:
     NUM_SHARDS = cfg.CONFIG['num_shards'] if 'num_shards' in cfg.CONFIG else 0
@@ -758,7 +757,7 @@ if PRODUCTION_BUILD:
         return list(range(per * cluster, per * cluster + per))
     client = MyClient(shard_count=NUM_SHARDS,
                       shard_ids=shard_ids_from_cluster(CLUSTER_ID, SHARDS),
-                      heartbeat_timeout=120, cache_offline_members=False)
+                      heartbeat_timeout=120, cache_offline_members=True)
 
 else:
     if NUM_SHARDS > 1:
