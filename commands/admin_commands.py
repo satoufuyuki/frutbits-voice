@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import traceback
@@ -176,6 +177,32 @@ async def admin_command(cmd, ctx):
             await channel.send(traceback.format_exc())
             await func.react(message, '❌')
 
+    if cmd == 'sapphiredebug':
+        if cfg.SAPPHIRE_ID is None:
+            await channel.send(content='❌ Not a sapphire')
+            return
+
+        if patreon_info is None:
+            await channel.send(content='❌ No patreon_info')
+            return
+
+        auths = utils.read_json(os.path.join(cfg.SCRIPT_DIR, "patron_auths.json"))
+        initiator_id = cfg.CONFIG["sapphires"][str(cfg.SAPPHIRE_ID)]['initiator']
+        msg = ("Sapphire ID: {}\n"
+               "User: `{}`\n"
+               "Actual guilds: {}\n"
+               "Config guilds: {}\n"
+               "Authenticated guilds: {}\n"
+               "get_guilds: {}".format(
+                   cfg.SAPPHIRE_ID,
+                   initiator_id,
+                   ", ".join(['`' + str(g.id) + '`' for g in client.guilds]),
+                   ", ".join(['`' + str(g) + '`' for g in cfg.CONFIG["sapphires"][str(cfg.SAPPHIRE_ID)]['servers']]),
+                   ", ".join(['`' + str(g) + '`' for g in auths[str(initiator_id)]['servers']]),
+                   ", ".join(['`' + str(g.id) + '`' for g in func.get_guilds(client)]))
+               )
+        await channel.send(msg)
+
     if cmd == 'status':
         g = utils.strip_quotes(params_str)
         if not g:
@@ -191,21 +218,21 @@ async def admin_command(cmd, ctx):
             await func.react(message, '❌')
 
     if cmd == 'settings':
-        g = utils.strip_quotes(params_str)
+        gid = utils.strip_quotes(params_str)
         try:
-            int(g)
+            int(gid)
         except ValueError:
             for x in guilds:
-                if x.name == g:
-                    g = str(x.id)
+                if x.name == gid:
+                    gid = str(x.id)
                     break
-        fname = g + '.json'
+        fname = gid + '.json'
         fp = os.path.join(cfg.SCRIPT_DIR, "guilds", fname)
         if os.path.exists(fp):
-            g = int(g)
-            gn = client.get_guild(g).name
-            head = "**{}** `{}`".format(gn, g)
-            head += "💎" if func.is_sapphire(g) else ("💳" if func.is_gold(g) else "")
+            gid = int(gid)
+            g = client.get_guild(gid)
+            head = "**{}** `{}`{}".format(g.name, gid, ("✅" if g in func.get_guilds(client) else "❌"))
+            head += "💎" if func.is_sapphire(gid) else ("💳" if func.is_gold(gid) else "")
             s = head
             s += "\n```json\n"
             with open(fp, 'r') as f:
@@ -306,6 +333,32 @@ async def admin_command(cmd, ctx):
                 await echo(s, channel)
             else:
                 await channel.send("¯\\_(ツ)_/¯")
+        except:
+            await channel.send(traceback.format_exc())
+            await func.react(message, '❌')
+
+    if cmd == 'votekicks':
+        try:
+            readable = {}
+            for k, kv in cfg.VOTEKICKS.items():
+                readable[k] = {
+                    "initiator": kv['initiator'].display_name,
+                    "participants": [m.display_name for m in kv['participants']],
+                    "required_votes": kv['required_votes'],
+                    "offender": kv['offender'].display_name,
+                    "reason": kv['reason'],
+                    "in_favor": [m.display_name for m in kv['in_favor']],
+                    "voice_channel": kv['voice_channel'].id,
+                    "message": kv['message'].id,
+                    "end_time": datetime.fromtimestamp(kv['end_time']).strftime("%Y-%m-%d %H:%M")
+                }
+            s = "```json\n" + json.dumps(readable, indent=1, sort_keys=True) + "```"
+            try:
+                await channel.send(s)
+            except discord.errors.HTTPException:
+                # Usually because message is over character limit
+                haste_url = await utils.hastebin(file_content)
+                await channel.send(haste_url)
         except:
             await channel.send(traceback.format_exc())
             await func.react(message, '❌')
