@@ -818,7 +818,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
             seed_c = channel.id + random_set
             seed_d = cfg.SEED + channel.id + random_set
             b, m = cname.split('[[', 1)
-            m, e = m.split(']]', 1)
+            m, e = str(m).split(']]', 1)
             if '\\' in m:
                 words = m.split('\\')
                 seed(seed_d)
