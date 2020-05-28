@@ -884,7 +884,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
                 else:
                     n = others
             if c is not None:
-                s, p = m.split(c, 1)
+                s, p = str(m).split(c, 1)
                 if n == 1:
                     m = s
                 else:
