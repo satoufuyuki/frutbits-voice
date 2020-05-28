@@ -688,9 +688,9 @@ class MyClient(discord.AutoShardedClient):
             print("Sapphire:", cfg.SAPPHIRE_ID)
         print("discordpy version: {}".format(discord.__version__))
         print('-' * 24)
-        import psutil, genesislib
+        import psutil
 
-        _id = genesislib.get_process_id()
+        _id = psutil.Process().pid
         total = psutil.virtual_memory().total
         this = psutil.Process(_id)
         mem = this.memory_full_info()
