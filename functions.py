@@ -818,7 +818,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
             seed_c = channel.id + random_set
             seed_d = cfg.SEED + channel.id + random_set
             b, m = cname.split('[[', 1)
-            m, e = str(m).split(']]', 1)
+            m, e = m.split(']]', 1)
             if '\\' in m:
                 words = m.split('\\')
                 seed(seed_d)
@@ -869,7 +869,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
                ('/' in cname.split('<<', 1)[1].split('>>', 1)[0] or
                 '\\' in cname.split('<<', 1)[1].split('>>', 1)[0])):
             b, m = cname.split('<<', 1)
-            m, e = str(m).split('>>', 1)
+            m, e = m.split('>>', 1)
             c = None
             if m.count('/') == 1:
                 c = '/'
@@ -884,7 +884,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
                 else:
                     n = others
             if c is not None:
-                s, p = str(m).split(c, 1)
+                s, p = m.split(c, 1)
                 if n == 1:
                     m = s
                 else:
@@ -896,7 +896,7 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
 
         while '{{' in cname and '}}' in cname and cname.count('{{') == cname.count('}}') and guild_is_gold:
             m, e = cname.split('}}', 1)
-            sections = str(m).split('{{')
+            sections = m.split('{{')
             b = '{{'.join(sections[:-1])
             m = sections[-1]
 
@@ -919,10 +919,10 @@ async def rename_channel(guild, channel, settings, primary_id, templates=None, i
 
         while '""' in cname and cname.count('""') % 2 == 0 and ':' in cname.split('""', 1)[1].split('""')[0]:
             b, m = cname.split('""', 1)
-            m, e = str(m).split('""', 1)
-            m, s = str(m).split(':', 1)
+            m, e = m.split('""', 1)
+            m, s = m.split(':', 1)
             s = s.strip()
-            modes = str(m).split('+')
+            modes = m.split('+')
             ops = {
                 'caps': str.upper,
                 'upper': str.upper,
