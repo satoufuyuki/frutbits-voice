@@ -26,7 +26,7 @@ ADMIN = None
 
 DEV_BOT = cfg.CONFIG['DEV'] if 'DEV' in cfg.CONFIG else False
 GOLD_BOT = False
-NUM_SHARDS = cfg.CONFIG['num_shards'] if 'num_shards' in cfg.CONFIG else 0
+NUM_SHARDS = cfg.CONFIG.get('num_shards', 0)
 if DEV_BOT:
     print("DEV BOT")
     TOKEN = cfg.CONFIG['token_dev']
