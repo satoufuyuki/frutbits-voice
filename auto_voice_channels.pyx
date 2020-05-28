@@ -688,6 +688,13 @@ class MyClient(discord.AutoShardedClient):
             print("Sapphire:", cfg.SAPPHIRE_ID)
         print("discordpy version: {}".format(discord.__version__))
         print('-' * 24)
+        import psutil, genesislib
+
+        _id = genesislib.get_process_id()
+        total = psutil.virtual_memory().total
+        this = psutil.Process(_id)
+        mem = this.memory_full_info()
+        print(f"This process ({_id}) uses: ", (mem.rss * this.memory_percent()) / (1024 * 1024), "MB of RAM")
 
         shards = {}
         for g in func.get_guilds(self):

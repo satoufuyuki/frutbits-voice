@@ -15,3 +15,7 @@ push.bat
 secondaries.txt
 venv.bat
 /project-env/
+/functions.cp37-win_amd64.pyd
+/functions.c
+/auto_voice_channels.cp37-win_amd64.pyd
+/auto_voice_channels.c
