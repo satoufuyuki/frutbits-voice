@@ -79,7 +79,6 @@ async def execute(ctx, params):
             s = s.replace(" :)", " :slight_smile:")
             s = s.replace("**Gold Patron**", ":credit_card: **Gold Patron**")
             s = s.replace("Change the prefix of the bot (default is", "Change the prefix of the bot (currently")
-            s = s.replace("<https://www.patreon.com/pixaal>", "https://www.patreon.com/pixaal")  # Always embed
             if s.startswith("\n**-- Commands --**\n") and can_embed:
                 lines = [l for l in s.split('\n') if l != ""]
                 parts = []
@@ -171,13 +170,13 @@ async def execute(ctx, params):
                 await channel.send(
                     "**Note:** This command is restricted to :gem: **Sapphire Patron** servers.\n"
                     "Become a Sapphire Patron to support the development of this bot and unlock more ~~useless~~ "
-                    "amazing features: <https://www.patreon.com/pixaal>"
+                    "amazing features: g"
                 )
             elif commands[c].gold_required and not ctx['gold']:
                 await channel.send(
                     "**Note:** This command is restricted to :credit_card: **Gold Patron** servers.\n"
                     "Become a Gold Patron to support the development of this bot and unlock more ~~useless~~ "
-                    "amazing features: <https://www.patreon.com/pixaal>"
+                    "amazing features: g"
                 )
             return True, "NO RESPONSE"
         elif c == 'expressions':
@@ -217,19 +216,19 @@ async def execute(ctx, params):
             )
             e.add_field(
                 name=" ·  `PLAYERS>number`",
-                value="💎 [*patrons only.*](https://patreon.com/pixaal) Check if the number of players in your game "
+                value="💎 [*patrons only.*](https://frutbits.xyz/) Check if the number of players in your game "
                 "(determined either by Discord Rich Presence or the game activity statuses of members in the channel) "
                 "is greater than the number provided. You can also use `<`, `<=`, `>=`, `=` and `!=`.\n\n"
             )
             e.add_field(
                 name=" ·  `MAX>number`",
-                value="💎 [*patrons only.*](https://patreon.com/pixaal) Check if the maximum number of players "
+                value="💎 [*patrons only.*](https://frutbits.xyz/) Check if the maximum number of players "
                 "allowed in your game (determined by Discord Rich Presence or the channel limit) is greater than the "
                 "number provided. You can also use `<`, `<=`, `>=`, `=` and `!=`.\n\n"
             )
             e.add_field(
                 name=" ·  `RICH`",
-                value="💎 [*patrons only.*](https://patreon.com/pixaal) Whether or not the current game uses "
+                value="💎 [*patrons only.*](https://frutbits.xyz/) Whether or not the current game uses "
                       "Discord Rich Presence, which means `@@num_playing@@`, `@@party_size@@`, `@@party_state@@`, and "
                       "`@@party_details@@` should have reliable values.\n\n"
             )
@@ -257,8 +256,6 @@ async def execute(ctx, params):
                 "The spaces around the `??` and `//` improve readability but may not be desired if you do not want any "
                 "spaces around the result.\n\n"
                 "If you have a question or need any help setting up an expression, "
-                "please ask me in the [support server](https://discord.io/DotsBotsSupport). "
-                "I'd be happy to add any extra variables you need."
             )
             await channel.send(embed=e)
             return True, "NO RESPONSE"
