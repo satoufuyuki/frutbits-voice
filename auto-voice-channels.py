@@ -141,7 +141,7 @@ def cleanup(client, tick_):
             cfg.FIRST_RUN_COMPLETE = True
             guilds = func.get_guilds(client)
             if guilds:
-                text = 'vc/help'
+                text = 's!help'
                 if len(guilds) == 1 and guilds[0].id in cfg.PREFIXES:
                     text = cfg.PREFIXES[guilds[0].id] + 'help'
             else:
@@ -583,7 +583,7 @@ async def update_status(client):
     if client.is_ready():
         guilds = func.get_guilds(client)
         if guilds:
-            prefix = 'vc/'
+            prefix = 's!'
             if len(guilds) == 1 and guilds[0].id in cfg.PREFIXES:
                 prefix = cfg.PREFIXES[guilds[0].id]
             nc = utils.num_active_channels(guilds)
@@ -775,7 +775,7 @@ async def on_message(message):
         return
 
     if not message.guild:  # DM
-        if 'help' in message.content and len(message.content) <= len("@Auto Voice Channels help"):
+        if 'help' in message.content and len(message.content) <= len("@Izumi Sagiri help"):
             await message.channel.send("Sorry I don't respond to commands in DMs, "
                                        "you need to type the commands in a channel in your server.\n"
                                        "If you've tried that already, then make sure I have the right permissions "
@@ -791,7 +791,7 @@ async def on_message(message):
             for auth_guild in auth_guilds:
                 try:
                     g = client.get_guild(int(auth_guild))
-                    if g is None:
+                    if g is None: 
                         await channel.send("`{}` is not a guild I know about, "
                                            "maybe you need to invite me there first?".format(auth_guild))
                         return
@@ -859,7 +859,7 @@ async def on_message(message):
     if message.guild.id in cfg.PREFIXES:
         prefix_p = cfg.PREFIXES[message.guild.id]
     else:
-        prefix_p = 'vc/'
+        prefix_p = 's!'
 
     prefix = None
     if message.content.startswith(prefix_m):
